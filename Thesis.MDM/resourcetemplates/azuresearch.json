@@ -1,0 +1,50 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "azureSearchName": {
+      "type": "string"
+    },
+    "azureSearchSku": {
+      "type": "string"
+    },
+    "azureSearchReplicaCount": {
+      "type": "int"
+    },
+    "azureSearchPartitionCount": {
+      "type": "int"
+    },
+    "azureSearchHostingMode": {
+      "type": "string"
+    }
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Search/searchServices",
+      "sku": {
+        "name": "[parameters('azureSearchSku')]"
+      },
+      "name": "[parameters('azureSearchName')]",
+      "apiVersion": "2015-08-19",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "properties": {
+        "replicaCount": "[parameters('azureSearchReplicaCount')]",
+        "partitionCount": "[parameters('azureSearchPartitionCount')]",
+        "hostingMode": "[parameters('azureSearchHostingMode')]"
+      }
+    }
+  ],
+  "outputs": {
+    "url": {
+      "value": "[concat('https://', parameters('azureSearchName'), '.search.windows.net')]",
+      "type": "string"
+    },
+    "primaryAdminKey": {
+      "value": "[listAdminKeys(parameters('azureSearchName'), '2015-08-19').PrimaryKey]",
+      "type": "string"
+    }
+  }
+}

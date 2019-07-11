@@ -1,0 +1,91 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {   
+    "sqlUserName": {
+      "type": "securestring"
+    },
+    "sqlServerPassword": {
+      "type": "securestring"
+    },
+    "sqlServerName": {
+      "type": "string"
+    },
+    "sqlMyIpForManaging": {
+      "type": "securestring"
+    },
+    "sqlInitialDatabaseName": {
+      "type": "string"
+    }  
+  },
+  "variables": {},
+  "resources": [
+    {
+      "name": "[parameters('sqlServerName')]",
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2014-04-01-preview",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [],
+      "properties": {        
+        "administratorLogin": "[parameters('sqlUserName')]",
+        "administratorLoginPassword": "[parameters('sqlServerPassword')]",
+        "version": "12.0"
+      },
+      "resources": [
+        {
+          "name": "[parameters('sqlInitialDatabaseName')]",
+          "type": "databases",
+          "apiVersion": "2014-04-01-preview",
+          "location": "[resourceGroup().location]",
+          "properties": {
+            "collation": "SQL_Latin1_General_CP1_CS_AS",
+            "edition": "Basic",
+            "maxSizeBytes": "2147483648",
+            "readScale": "Disabled"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+          ]
+        },
+        {
+          "type": "firewallRules",
+          "name": "dataFactoryFirewallRule",
+          "apiVersion": "2014-04-01-preview",
+          "location": "[resourceGroup().location]",
+          "scale": null,
+          "properties": {
+            "startIpAddress": "[parameters('sqlMyIpForManaging')]",
+            "endIpAddress": "[parameters('sqlMyIpForManaging')]"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+          ]
+        },
+        {
+          "type": "firewallRules",
+          "name": "AllowAllWindowsAzureIps",
+          "apiVersion": "2014-04-01-preview",
+          "location": "[resourceGroup().location]",
+          "scale": null,
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+          ]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "connectionString": {
+      "value": "[concat('Server=tcp:',parameters('sqlServerName'),'.database.windows.net,1433;Database=', parameters('sqlInitialDatabaseName'), ';User ID=',parameters('sqlUserName'),';Password=',parameters('sqlServerPassword'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]",
+      "type": "string"
+    },
+    "serverUrl": {
+      "value": "[concat(parameters('sqlServerName'),'.database.windows.net')]",
+      "type": "string"
+    }
+  }
+}

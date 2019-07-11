@@ -1,0 +1,161 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "_artifactsLocation": {
+      "type": "string"
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring"
+    },
+    "mdmWebPagePackageFolder": {
+      "type": "string"
+    },
+    "mdmWebPagePackageFileName": {
+      "type": "string"
+    },
+    "webAppName": {
+      "type": "string"
+    },
+    "azureSearchName": {
+      "type": "string"
+    },
+    "searchAdminApiKey": {
+      "type": "securestring"
+    },
+    "azureSearchIndexName": {
+      "type": "string"
+    },
+    "serviceBusConnectionString": {
+      "type": "securestring"
+    },
+    "serviceBusEventsTopicName": {
+      "type": "string"
+    },
+    "serviceBusLogsTopicName": {
+      "type": "string"
+    },
+    "sqlUserName": {
+      "type": "securestring"
+    },
+    "sqlServerPassword": {
+      "type": "securestring"
+    }
+  },
+  "variables": {
+    "hostingPlanName": "[tolower(concat('web', uniquestring(resourceGroup().id)))]",
+    "database": "webapp"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2015-08-01",
+      "name": "[variables('hostingPlanName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "B1",
+        "capacity": 0
+      },
+      "properties": {
+        "name": "[variables('hostingPlanName')]",
+        "numberOfWorkers": 1
+      }
+    },
+    {
+      "name": "[parameters('webAppName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-08-01",
+      "dependsOn": [
+        "[variables('hostingPlanName')]"
+
+      ],
+      "properties": {
+        "name": "[parameters('webAppName')]",
+        "serverFarmId": "[variables('hostingPlanName')]"
+      },
+      "resources": [
+        {
+          "name": "MSDeploy",
+          "type": "extensions",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[parameters('webAppName')]",
+            "[variables('hostingPlanName')]",
+            "[concat('sqlserver-',parameters('webAppName'))]"
+          ],
+          "properties": {
+            "packageUri": "[concat(parameters('_artifactsLocation'), '/', parameters('mdmWebPagePackageFolder'), '/', parameters('mdmWebPagePackageFileName'), parameters('_artifactsLocationSasToken'))]",
+            "dbType": "None",
+            "connectionString": "[concat('Server=tcp:', concat('sqlserver-',parameters('webAppName')),'.database.windows.net,1433;Database=', variables('database'), ';User ID=',parameters('sqlUserName'),';Password=',parameters('sqlServerPassword'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]",
+            "setParameters": {
+              "IIS Web Application Name": "[parameters('webAppName')]"
+            }
+          }
+        },
+        {
+          "name": "appsettings",
+          "type": "config",
+          "apiVersion": "2015-08-01",
+          "dependsOn": [
+            "[parameters('webAppName')]",
+            "[variables('hostingPlanName')]"
+          ],
+          "properties": {
+            "searchServiceName": "[parameters('azureSearchName')]",
+            "adminApiKey": "[parameters('searchAdminApiKey')]",
+            "indexName": "[parameters('azureSearchIndexName')]",
+            "connectionString": "[parameters('serviceBusConnectionString')]",
+            "eventsTopicName": "[parameters('serviceBusEventsTopicName')]",
+            "logsTopicName": "[parameters('serviceBusLogsTopicName')]"
+          }
+        }
+      ]
+    },
+    {
+      "name": "[concat('sqlserver-',parameters('webAppName'))]",
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2014-04-01-preview",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [],
+      "properties": {
+        "administratorLogin": "[parameters('sqlUserName')]",
+        "administratorLoginPassword": "[parameters('sqlServerPassword')]",
+        "version": "12.0"
+      },
+      "resources": [
+        {
+          "name": "[variables('database')]",
+          "type": "databases",
+          "apiVersion": "2014-04-01-preview",
+          "location": "[resourceGroup().location]",
+          "properties": {
+            "edition": "Basic",
+            "maxSizeBytes": "2147483648",
+            "readScale": "Disabled"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', concat('sqlserver-', parameters('webAppName'))) ]"
+          ]
+        },        
+        {
+          "type": "firewallRules",
+          "name": "AllowAllWindowsAzureIps",
+          "apiVersion": "2014-04-01-preview",
+          "location": "[resourceGroup().location]",
+          "scale": null,
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', concat('sqlserver-', parameters('webAppName')))]"
+          ]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+  }
+}

@@ -1,0 +1,209 @@
+﻿@model IList<Microsoft.Azure.Search.Models.SearchResult<Thesis.MDM.WebApplication.Models.Person>>
+
+@{
+    ViewBag.Title = "Index";
+}
+
+
+<div class="col-lg-12">
+    <h2>Search</h2>
+
+    @using (Html.BeginForm("Index", "People"))
+    {
+        <div>
+            <input type="text" id="search" name="searchText" />
+
+            <input type="submit" id="searchsubmit" value="Search" class="btn btn-default" />
+
+
+        </div>
+    }
+</div>
+
+
+<div class="col-lg-12">
+    @if (Model != null && Model.Count != 0)
+    {
+        if (Model.First().Document != Model.Last().Document)
+        {
+            <h2>Result</h2>
+            using (Html.BeginForm("Merge", "People",
+                new
+                {
+                    id1 = Model.First().Document.Id,
+                    id2 = Model.Last().Document.Id
+                }))
+            {
+                @Html.AntiForgeryToken()
+                <table>
+                    <tr>
+                        <th>Id</th>
+                        <td>@Model.First().Document.Id</td>
+                        <td>@Model.Last().Document.Id</td>
+                    </tr>
+                    <tr>
+                        <th>First name</th>
+                        <td>@Model.First().Document.FirstName</td>
+                        <td>@Model.Last().Document.FirstName</td>
+                    </tr>
+                    <tr>
+                        <th>Last name</th>
+                        <td>@Model.First().Document.LastName</td>
+                        <td>@Model.Last().Document.LastName</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>@Model.First().Document.Email</td>
+                        <td>@Model.Last().Document.Email</td>
+                    </tr>
+                    <tr>
+                        <th>Gender</th>
+                        <td>@Model.First().Document.Gender</td>
+                        <td>@Model.Last().Document.Gender</td>
+                    </tr>
+                    <tr>
+                        <th>City</th>
+                        <td>@Model.First().Document.City</td>
+                        <td>@Model.Last().Document.City</td>
+                    </tr>
+                    <tr>
+                        <th>Country</th>
+                        <td>@Model.First().Document.Country</td>
+                        <td>@Model.Last().Document.Country</td>
+                    </tr>
+                    <tr>
+                        <th>Street address</th>
+                        <td>@Model.First().Document.StreetAddress</td>
+                        <td>@Model.Last().Document.StreetAddress</td>
+                    </tr>
+                    <tr>
+                        <th>Company name</th>
+                        <td>@Model.First().Document.CompanyName</td>
+                        <td>@Model.Last().Document.CompanyName</td>
+                    </tr>
+                    <tr>
+                        <th>Job title</th>
+                        <td>@Model.First().Document.JobTitle</td>
+                        <td>@Model.Last().Document.JobTitle</td>
+                    </tr>
+                    <tr>
+                        <th>Phone number</th>
+                        <td>@Model.First().Document.PhoneNumber</td>
+                        <td>@Model.Last().Document.PhoneNumber</td>
+                    </tr>
+                    <tr>
+                        <th>Edit</th>
+                        <td>@Html.ActionLink("Edit", "Edit/" + @Model.First().Document.Id)</td>
+                        <td>@Html.ActionLink("Edit", "Edit/" + @Model.Last().Document.Id)</td>
+                    </tr>
+                </table>
+
+                <div>
+                    <input type="submit" value="Merge" class="btn btn-default" />
+                </div>
+
+            }
+        }
+        else
+        {
+            <h2>Result</h2>
+            using (Html.BeginForm("Unmerge", "People",
+                new
+                {
+                    id = Model.First().Document.Id
+                }))
+            {
+                @Html.AntiForgeryToken()
+                <table>
+                    <tr>
+                        <th>Id</th>
+                        <td>@Model.First().Document.Id</td>
+                    </tr>
+                    <tr>
+                        <th>First name</th>
+                        <td>@Model.First().Document.FirstName</td>
+                    </tr>
+                    <tr>
+                        <th>Last name</th>
+                        <td>@Model.First().Document.LastName</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>@Model.First().Document.Email</td>
+                    </tr>
+                    <tr>
+                        <th>Gender</th>
+                        <td>@Model.First().Document.Gender</td>
+                    </tr>
+                    <tr>
+                        <th>City</th>
+                        <td>@Model.First().Document.City</td>
+                    </tr>
+                    <tr>
+                        <th>Country</th>
+                        <td>@Model.First().Document.Country</td>
+                    </tr>
+                    <tr>
+                        <th>Street address</th>
+                        <td>@Model.First().Document.StreetAddress</td>
+                    </tr>
+                    <tr>
+                        <th>Company name</th>
+                        <td>@Model.First().Document.CompanyName</td>
+                    </tr>
+                    <tr>
+                        <th>Job title</th>
+                        <td>@Model.First().Document.JobTitle</td>
+                    </tr>
+                    <tr>
+                        <th>Phone number</th>
+                        <td>@Model.First().Document.PhoneNumber</td>
+                    </tr>
+                    <tr>
+                        <th>Edit</th>
+                        <td>@Html.ActionLink("Edit", "Edit/" + @Model.First().Document.Id)</td>
+                    </tr>
+                </table>
+                if (Model.First().Document.Id.Contains('-'))
+                {
+                    <div>
+                        <input type="submit" value="Unmerge" class="btn btn-default" />
+                    </div>
+                }
+            }
+        }
+    }
+</div>
+
+@section Scripts {
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+
+
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script>
+        $(function () {
+            $("#search").autocomplete({
+                source: "/people/suggest",
+                minLength: 2
+            });
+        });
+    </script>
+}

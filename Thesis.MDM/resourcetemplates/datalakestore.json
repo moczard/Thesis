@@ -1,0 +1,36 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dataLakeLocation": {
+      "type": "string"
+    },
+    "dataLakeStoreName": {
+      "type": "string"
+    }   
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DataLakeStore/accounts",
+      "name": "[parameters('dataLakeStoreName')]",
+      "apiVersion": "2016-11-01",
+      "location": "[parameters('dataLakeLocation')]",
+      "scale": null,
+      "properties": {
+        "newTier": "Consumption",
+        "encryptionState": "Enabled",
+        "encryptionConfig": {
+          "type": "ServiceManaged"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "adlURI": {
+      "value": "[concat('adl://', parameters('dataLakeStoreName'), '.azuredatalakestore.net')]",
+      "type": "string"
+    }
+  }
+}

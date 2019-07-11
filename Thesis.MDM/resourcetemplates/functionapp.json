@@ -1,0 +1,237 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "functionAppName": {
+      "type": "string"
+    },
+    "serviceBusConnectionString": {
+      "type": "securestring"
+    },
+    "azureSearchName": {
+      "type": "string"
+    },
+    "searchAdminApiKey": {
+      "type": "securestring"
+    },
+    "activeDirectoryDomain": {
+      "type": "securestring"
+    },
+    "servicePrincipalId": {
+      "type": "securestring"
+    },
+    "servicePrincipalKey": {
+      "type": "securestring"
+    },
+    "dataLakeStoreName": {
+      "type": "string"
+    },
+    "dataLakeUpdateFilesPath": {
+      "type": "string"
+    },
+    "dataLakeMergeFilesPath": {
+      "type": "string"
+    },
+    "dataLakeLogFilesPath": {
+      "type": "string"
+    },
+    "indexName": {
+      "type": "string"
+    },
+    "sqlDataSource": {
+      "type": "securestring"
+    },
+    "sqlUserName": {
+      "type": "securestring"
+    },
+    "sqlServerPassword": {
+      "type": "securestring"
+    },
+    "sqlInitialDatabaseName": {
+      "type": "string"
+    },
+    "sqlInitialTableName": {
+      "type": "string"
+    },
+    "documentDbEndpoint": {
+      "type": "securestring"
+    },
+    "documentDbAuthenticationKey": {
+      "type": "securestring"
+    },
+    "documentDbCollection": {
+      "type": "string"
+    },
+    "documentDbDataBase": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "storageAccountName": "[tolower(concat('func', uniquestring(resourceGroup().id)))]",
+    "storageAccountid": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+    "hostingPlanName": "[variables('storageAccountName')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccountName')]",
+      "apiVersion": "2016-12-01",
+      "location": "[resourceGroup().location]",
+      "kind": "Storage",
+      "sku": {
+        "name": "Standard_LRS"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2015-04-01",
+      "name": "[variables('hostingPlanName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "name": "[variables('hostingPlanName')]",
+        "sku": "Standard",
+        "workerSize": 0,
+        "hostingEnvironment": "",
+        "numberOfWorkers": 1
+      }
+    },
+    {
+      "apiVersion": "2016-03-01",
+      "name": "[parameters('functionAppName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[resourceGroup().location]",
+      "kind": "functionapp",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "name": "[parameters('functionAppName')]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "AzureWebJobsDashboard",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+            },
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~1"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[concat(toLower(parameters('functionAppName')), 'aecb')]"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "6.5.0"
+            },
+            {
+              "name": "searchServiceName",
+              "value": "[parameters('azureSearchName')]"
+            },
+            {
+              "name": "indexName",
+              "value": "[parameters('indexName')]"
+            },
+            {
+              "name": "adlAccountName",
+              "value": "[parameters('dataLakeStoreName')]"
+            },
+            {
+              "name": "updateFilePath",
+              "value": "[parameters('dataLakeUpdateFilesPath')]"
+            },
+            {
+              "name": "mergeFilePath",
+              "value": "[parameters('dataLakeMergeFilesPath')]"
+            },
+            {
+              "name": "logFilePath",
+              "value": "[parameters('dataLakeLogFilesPath')]"
+            },
+            {
+              "name": "ServiceBusConnectionString",
+              "value": "[parameters('serviceBusConnectionString')]"
+            },
+            {
+              "name": "adminApiKey",
+              "value": "[parameters('searchAdminApiKey')]"
+            },
+            {
+              "name": "domain",
+              "value": "[parameters('activeDirectoryDomain')]"
+            },
+            {
+              "name": "servicePrincipalId",
+              "value": "[parameters('servicePrincipalId')]"
+            },
+            {
+              "name": "servicePrincipalKey",
+              "value": "[parameters('servicePrincipalKey')]"
+            },
+
+            {
+              "name": "dataSource",
+              "value": "[parameters('sqlDataSource')]"
+            },
+            {
+              "name": "userID",
+              "value": "[parameters('sqlUserName')]"
+            },
+            {
+              "name": "password",
+              "value": "[parameters('sqlServerPassword')]"
+            },
+            {
+              "name": "initialCatalog",
+              "value": "[parameters('sqlInitialDatabaseName')]"
+            },
+            {
+              "name": "sqlInitialTableName",
+              "value": "[parameters('sqlInitialTableName')]"
+            },
+            {
+              "name": "database",
+              "value": "[parameters('documentDbDataBase')]"
+            },
+            {
+              "name": "collection",
+              "value": "[parameters('documentDbCollection')]"
+            },
+            {
+              "name": "endpoint",
+              "value": "[parameters('documentDbEndpoint')]"
+            },
+            {
+              "name": "authKey",
+              "value": "[parameters('documentDbAuthenticationKey')]"
+            }
+          ]
+        },
+        "clientAffinityEnabled": false
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountName": {
+      "value": "[variables('storageAccountName')]",
+      "type": "string"
+    },
+    "storageAccountKey": {
+      "value": "[listKeys(variables('storageAccountid'),'2015-05-01-preview').key1]",
+      "type": "string"
+    },
+    "fileShareName": {
+      "value": "[concat(toLower(parameters('functionAppName')), 'aecb')]",
+      "type": "string"
+    }
+  }
+}

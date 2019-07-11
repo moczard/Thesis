@@ -1,0 +1,492 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "_artifactsLocationSasToken": {
+      "type": "securestring"
+    },
+    "_artifactsLocation": {
+      "type": "string"
+    },
+    "azureSearchName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Azure Search. (Service name must only contain lowercase letters, digits or dashes, cannot use dash as the first two or last one characters, cannot contain consecutive dashes, and is limited between 2 and 60 characters in length.)"
+      }
+    },
+    "azureSearchIndexName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Azure Search index"
+      }
+    },
+    "azureSearchSku": {
+      "type": "string",
+      "defaultValue": "basic",
+      "allowedValues": [
+        "free",
+        "basic",
+        "standard",
+        "standard2",
+        "standard3"
+      ],
+      "metadata": {
+        "description": "The SKU of the search service you want to create. E.g. free or standard"
+      }
+    },
+    "azureSearchReplicaCount": {
+      "type": "int",
+      "minValue": 1,
+      "maxValue": 12,
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Replicas distribute search workloads across the service. You need 2 or more to support high availability (applies to Basic and Standard only)."
+      }
+    },
+    "azureSearchPartitionCount": {
+      "type": "int",
+      "allowedValues": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        12
+      ],
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Partitions allow for scaling of document count as well as faster indexing by sharding your index over multiple Azure Search units."
+      }
+    },
+    "azureSearchHostingMode": {
+      "type": "string",
+      "defaultValue": "default",
+      "allowedValues": [
+        "default",
+        "highDensity"
+      ],
+      "metadata": {
+        "description": "Applicable only for SKU set to standard3. You can set this property to enable a single, high density partition that allows up to 1000 indexes, which is much higher than the maximum indexes allowed for any other SKU."
+      }
+    },
+    "sqlUserName": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The admin username for the SQL server."
+      }
+    },
+    "sqlServerPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The admin password for the SQL server. (Service name must only contain lowercase letters, digits or dashes, cannot use dash as the first two or last one characters, cannot contain consecutive dashes, and is limited between 2 and 60 characters in length.)"
+      }
+    },
+    "sqlServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the SQL server."
+      }
+    },
+    "sqlFileName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the file in the Data Lake which comes from the SQL Server."
+      }
+    },
+    "sqlMyIpForManaging": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The IP of the current computer for accessing the SQL Server on the Azure Portal."
+      }
+    },
+    "dataFactoryName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Data Factory. (The name can contain only letters, numbers and hyphens. The first and last characters must be a letter or number. Spaces are not allowed. It is limited between 3 and 64 characters in length.)"
+      }
+    },
+    "dataFactoryLocation": {
+      "type": "string",
+      "defaultValue": "North Europe",
+      "allowedValues": [
+        "East US",
+        "West Central US",
+        "West US",
+        "North Europe"
+      ],
+      "metadata": {
+        "description": "The location of the Data Factory."
+      }
+    },
+    "dataLakeStoreName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Azure Data Lake Store. (Resource Name should contain only lowercase letters and numbers. Resource Name should be between 3 and 24 characters long.)"
+      }
+    },
+    "dataLakeLocation": {
+      "type": "string",
+      "defaultValue": "North Europe",
+      "allowedValues": [
+        "East US 2",
+        "Central US",
+        "North Europe"
+      ],
+      "metadata": {
+        "description": "The location of theAzure Data Lake Store."
+      }
+    },
+    "dataLakeUpdateFilesPath": {
+      "type": "string",
+      "metadata": {
+        "description": "The file path in the Data Lake where the updates should be stored"
+      }
+    },
+    "dataLakeMergeFilesPath": {
+      "type": "string",
+      "metadata": {
+        "description": "The file path in the Data Lake where the merges should be stored"
+      }
+    },
+    "dataLakeLogFilesPath": {
+      "type": "string",
+      "metadata": {
+        "description": "The file path in the Data Lake where the audit log should be stored"
+      }
+    },
+    "dataLakeAnalyticsName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Azure Data Lake Analytics. (Resource Name should contain only lowercase letters and numbers. Resource Name should be between 3 and 24 characters long.)"
+      }
+    },
+    "documentDbName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the DocumentDb. (The field can contain only lowercase letters, numbers and the '-' character, and must be between 3 and 31 characters.)"
+      }
+    },
+    "documentDbFileName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the file in the Data Lake which comes from the DocumentDb."
+      }
+    },
+    "functionAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the FunctionApp (Resource Name should be between 2 and 60 characters long.)"
+      }
+    },
+    "serviceBusName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Service Bus Namespace. (Resource Name should be between 6 and 50 characters long. The namespace can contain only letters, numbers, and hyphens. The namespace must start with a letter, and it must end with a letter or number."
+      }
+    },
+    "serviceBusSku": {
+      "type": "string",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "defaultValue": "Standard",
+      "metadata": {
+        "description": "The messaging tier for service Bus namespace"
+      }
+    },
+    "webAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the WebApp."
+      }
+    },
+    "tenantId": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The tenant id of the current user."
+      }
+    },
+    "servicePrincipalId": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The Application Id of the created AD application."
+      }
+    },
+    "servicePrincipalKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The value of the created key (AD application)."
+      }
+    },
+    "activeDirectoryDomain": {
+      "type": "securestring",
+      "metadata": {
+        "description": "The domain of the active directory without 'https://'"
+      }
+    }
+  },
+  "variables": {
+    "sqlServerName": "[concat(tolower(parameters('sqlServerName')), '-', uniqueString(resourceGroup().id))]",
+    "dataLakeStoreName": "[tolower(concat(parameters('dataLakeStoreName'), uniqueString(resourceGroup().id)))]",
+    "dataLakeAnalyticsName": "[tolower(concat(parameters('dataLakeAnalyticsName'), uniqueString(resourceGroup().id)))]",
+    "documentDbName": "[concat(tolower(parameters('documentDbName')), '-', uniqueString(resourceGroup().id))]",
+    "azureSearchName": "[concat(tolower(parameters('azureSearchName')), '-', uniqueString(resourceGroup().id))]",
+    "serviceBusName": "[concat(tolower(parameters('serviceBusName')), '-', uniqueString(resourceGroup().id))]",
+    "functionAppName": "[concat(tolower(parameters('functionAppName')), '-', uniqueString(resourceGroup().id))]",
+    "dataFactoryName": "[concat(tolower(parameters('dataFactoryName')), '-', uniqueString(resourceGroup().id))]",
+    "webAppName": "[concat(tolower(parameters('webAppName')), '-', uniqueString(resourceGroup().id))]",
+    "resorurceFolderName": "resourcetemplates",
+    "documentDbDatabase": "initialdb",
+    "documentDbCollection": "people",
+    "sqlInitialDatabaseName": "initialdb",
+    "sqlInitialTableName": "initialData",
+    "mdmWebPagePackageFolder": "Thesis.MDM.WebApp",
+    "mdmWebPagePackageFileName": "package.zip",
+    "serviceBusEventsTopicName": "events",
+    "serviceBusLogsTopicName": "logs"
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-01-01",
+      "name": "AzureSQL",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'azuresql.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "sqlUserName": { "value": "[parameters('sqlUserName')]" },
+          "sqlServerPassword": { "value": "[parameters('sqlServerPassword')]" },
+          "sqlServerName": { "value": "[variables('sqlServerName')]" },
+          "sqlMyIpForManaging": { "value": "[parameters('sqlMyIpForManaging')]" },
+          "sqlInitialDatabaseName": { "value": "[variables('sqlInitialDatabaseName')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "DataLake",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'datalakestore.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dataLakeLocation": { "value": "[parameters('dataLakeLocation')]" },
+          "dataLakeStoreName": { "value": "[variables('dataLakeStoreName')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "DataLakeAnalytics",
+      "type": "Microsoft.Resources/deployments",
+      "dependsOn": [
+        "Microsoft.Resources/deployments/DataLake"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'datalakeanalytics.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dataLakeAnalyticsName": { "value": "[variables('dataLakeAnalyticsName')]" },
+          "dataLakeStoreName": { "value": "[variables('dataLakeStoreName')]" },
+          "dataLakeLocation": { "value": "[parameters('dataLakeLocation')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "DocumentDb",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'documentdb.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "documentDbName": { "value": "[variables('documentDbName')]" },
+          "documentDbDatabase": { "value": "[variables('documentDbDatabase')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "AzureSearch",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'azuresearch.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "azureSearchName": { "value": "[variables('azureSearchName')]" },
+          "azureSearchSku": { "value": "[parameters('azureSearchSku')]" },
+          "azureSearchReplicaCount": { "value": "[parameters('azureSearchReplicaCount')]" },
+          "azureSearchPartitionCount": { "value": "[parameters('azureSearchPartitionCount')]" },
+          "azureSearchHostingMode": { "value": "[parameters('azureSearchHostingMode')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "ServiceBus",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'servicebus.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "serviceBusName": { "value": "[variables('serviceBusName')]" },
+          "serviceBusSku": { "value": "[parameters('serviceBusSku')]" },
+          "serviceBusEventsTopicName": { "value": "[variables('serviceBusEventsTopicName')]" },
+          "serviceBusLogsTopicName": { "value": "[variables('serviceBusLogsTopicName')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "FunctionApp",
+      "type": "Microsoft.Resources/deployments",
+      "dependsOn": [
+        "Microsoft.Resources/deployments/AzureSQL",
+        "Microsoft.Resources/deployments/DataLake",
+        "Microsoft.Resources/deployments/DocumentDb",
+        "Microsoft.Resources/deployments/AzureSearch",
+        "Microsoft.Resources/deployments/ServiceBus"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'functionapp.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "functionAppName": { "value": "[variables('functionAppName')]" },
+          "serviceBusConnectionString": { "value": "[reference('Microsoft.Resources/deployments/ServiceBus').outputs.namespaceConnectionString.value]" },
+          "azureSearchName": { "value": "[variables('azureSearchName')]" },
+          "searchAdminApiKey": { "value": "[reference('Microsoft.Resources/deployments/AzureSearch').outputs.primaryAdminKey.value]" },
+          "activeDirectoryDomain": { "value": "[parameters('activeDirectoryDomain')]" },
+          "servicePrincipalId": { "value": "[parameters('servicePrincipalId')]" },
+          "servicePrincipalKey": { "value": "[parameters('servicePrincipalKey')]" },
+          "dataLakeStoreName": { "value": "[variables('dataLakeStoreName')]" },
+          "dataLakeUpdateFilesPath": { "value": "[parameters('dataLakeUpdateFilesPath')]" },
+          "dataLakeMergeFilesPath": { "value": "[parameters('dataLakeMergeFilesPath')]" },
+          "dataLakeLogFilesPath": { "value": "[parameters('dataLakeLogFilesPath')]" },
+          "indexName": { "value": "[parameters('azureSearchIndexName')]" },
+          "sqlDataSource": { "value": "[reference('Microsoft.Resources/deployments/AzureSQL').outputs.serverUrl.value]" },
+          "sqlUserName": { "value": "[parameters('sqlUserName')]" },
+          "sqlServerPassword": { "value": "[parameters('sqlServerPassword')]" },
+          "sqlInitialDatabaseName": { "value": "[variables('sqlInitialDatabaseName')]" },
+          "sqlInitialTableName": { "value": "[variables('sqlInitialTableName')]" },
+          "documentDbEndpoint": { "value": "[reference('Microsoft.Resources/deployments/DocumentDb').outputs.documentDbUri.value]" },
+          "documentDbAuthenticationKey": { "value": "[reference('Microsoft.Resources/deployments/DocumentDb').outputs.primaryKey.value]" },
+          "documentDbCollection": { "value": "[variables('documentDbCollection')]" },
+          "documentDbDatabase": { "value": "[variables('documentDbDatabase')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "DataFactory",
+      "type": "Microsoft.Resources/deployments",
+      "dependsOn": [
+        "Microsoft.Resources/deployments/DataLake",
+        "Microsoft.Resources/deployments/AzureSQL",
+        "Microsoft.Resources/deployments/DocumentDb",
+        "Microsoft.Resources/deployments/AzureSearch"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'datafactory.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "dataFactoryLocation": { "value": "[parameters('dataFactoryLocation')]" },
+          "dataFactoryName": { "value": "[variables('dataFactoryName')]" },
+          "sqlFileName": { "value": "[parameters('sqlFileName')]" },
+          "sqlTableName": { "value": "[variables('sqlInitialTableName')]" },
+          "sqlConnectionString": { "value": "[reference('Microsoft.Resources/deployments/AzureSQL').outputs.connectionString.value]" },
+          "dataLakeStoreName": { "value": "[variables('dataLakeStoreName')]" },
+          "azureSearchName": { "value": "[variables('azureSearchName')]" },
+          "documentDbConnectionString": { "value": "[reference('Microsoft.Resources/deployments/DocumentDb').outputs.dbConnectionString.value]" },
+          "documentDbCollectionName": { "value": "[variables('documentDbCollection')]" },
+          "documentDbFileName": { "value": "[parameters('documentDbFileName')]" },
+          "tenantId": { "value": "[parameters('tenantId')]" },
+          "servicePrincipalId": { "value": "[parameters('servicePrincipalId')]" },
+          "servicePrincipalKey": { "value": "[parameters('servicePrincipalKey')]" },
+          "adlURI": { "value": "[reference('Microsoft.Resources/deployments/DataLake').outputs.adlURI.value]" },
+          "azureSearchUrl": { "value": "[reference('Microsoft.Resources/deployments/AzureSearch').outputs.url.value]" },
+          "azureSearchKey": { "value": "[reference('Microsoft.Resources/deployments/AzureSearch').outputs.primaryAdminKey.value]" },
+          "azureSearchIndexName": { "value": "[parameters('azureSearchIndexName')]" }
+        }
+      }
+    },
+    {
+      "apiVersion": "2015-01-01",
+      "name": "WebApp",
+      "type": "Microsoft.Resources/deployments",
+      "dependsOn": [
+        "Microsoft.Resources/deployments/ServiceBus",
+        "Microsoft.Resources/deployments/AzureSearch"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'), '/', variables('resorurceFolderName'), '/', 'webapp.json', parameters('_artifactsLocationSasToken'))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "_artifactsLocation": { "value": "[parameters('_artifactsLocation')]" },
+          "_artifactsLocationSasToken": { "value": "[parameters('_artifactsLocationSasToken')]" },
+          "mdmWebPagePackageFolder": { "value": "[variables('mdmWebPagePackageFolder')]" },
+          "mdmWebPagePackageFileName": { "value": "[variables('mdmWebPagePackageFileName')]" },
+          "webAppName": { "value": "[variables('webAppName')]" },
+          "azureSearchName": { "value": "[variables('azureSearchName')]" },
+          "searchAdminApiKey": { "value": "[reference('Microsoft.Resources/deployments/AzureSearch').outputs.primaryAdminKey.value]" },
+          "azureSearchIndexName": { "value": "[parameters('azureSearchIndexName')]" },
+          "serviceBusConnectionString": { "value": "[reference('Microsoft.Resources/deployments/ServiceBus').outputs.namespaceConnectionString.value]" },
+          "serviceBusEventsTopicName": { "value": "[variables('serviceBusEventsTopicName')]" },
+          "serviceBusLogsTopicName": { "value": "[variables('serviceBusLogsTopicName')]" },
+          "sqlUserName": { "value": "[parameters('sqlUserName')]" },
+          "sqlServerPassword": { "value": "[parameters('sqlServerPassword')]" }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountName": {
+      "value": "[reference('Microsoft.Resources/deployments/FunctionApp').outputs.storageAccountName.value]",
+      "type": "string"
+    },
+    "storageAccountKey": {
+      "value": "[reference('Microsoft.Resources/deployments/FunctionApp').outputs.storageAccountKey.value]",
+      "type": "string"
+    },
+    "fileShareName": {
+      "value": "[reference('Microsoft.Resources/deployments/FunctionApp').outputs.fileShareName.value]",
+      "type": "string"
+    },
+    "dataLakeStoreName": {
+      "value": "[parameters('dataLakeStoreName')]",
+      "type": "string"
+    },
+    "dataLakeAnalyticsName": {
+      "value": "[parameters('dataLakeAnalyticsName')]",
+      "type": "string"
+    }
+  }
+}

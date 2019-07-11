@@ -1,0 +1,35 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dataLakeAnalyticsName": {
+      "type": "string"
+    },
+    "dataLakeStoreName": {
+      "type": "string"
+    },
+    "dataLakeLocation": {
+      "type": "string"
+    }
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "name": "[parameters('dataLakeAnalyticsName')]",
+      "type": "Microsoft.DataLakeAnalytics/accounts",
+      "location": "[parameters('dataLakeLocation')]",
+      "apiVersion": "2016-11-01",
+      "properties": {
+        "defaultDataLakeStoreAccount": "[parameters('dataLakeStoreName')]",
+        "dataLakeStoreAccounts": [
+          {
+            "name": "[parameters('dataLakeStoreName')]"
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {  
+  }
+}

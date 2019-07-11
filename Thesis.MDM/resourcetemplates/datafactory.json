@@ -1,0 +1,450 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dataFactoryLocation": {
+      "type": "string"
+    },
+    "dataFactoryName": {
+      "type": "string"
+    },
+    "sqlFileName": {
+      "type": "string"
+    },
+    "sqlTableName": {
+      "type": "string"
+    },
+    "sqlConnectionString": {
+      "type": "string"
+    },
+    "dataLakeStoreName": {
+      "type": "string"
+    },
+    "azureSearchName": {
+      "type": "string"
+    },
+    "documentDbConnectionString": {
+      "type": "securestring"
+    },
+    "documentDbCollectionName": {
+      "type": "string"
+    },
+    "documentDbFileName": {
+      "type": "string"
+    },
+    "tenantId": {
+      "type": "securestring"
+    },
+    "servicePrincipalId": {
+      "type": "securestring"
+    },
+    "servicePrincipalKey": {
+      "type": "securestring"
+    },
+    "adlURI": {
+      "type": "string"
+    },
+    "azureSearchUrl": {
+      "type": "string"
+    },
+    "azureSearchKey": {
+      "type": "securestring"
+    },
+    "azureSearchIndexName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "sqlDatabaseLinkedService": "sql-linked-service",
+    "dataLakeLinkedService": "datalake-linked-service",
+    "azureSearchLinkedService": "search-linked-service",
+    "documentDbLinkedService": "documentdb-linked-service",
+    "sqlDataSet": "sql-dataset",
+    "sqlInDataLakeDataSet": "sql-datalake-dataset",
+    "documentDbDataSet": "documentdb-dataset",
+    "documentDbInDataLakeDataSet": "documentdb-datalake-dataset",
+    "searchDataSetSql": "search-dataset-sql",
+    "searchDataSetDocumentDb": "search-dataset-documentdb"
+  },
+  "resources": [
+    {
+      "name": "[parameters('dataFactoryName')]",
+      "apiVersion": "2015-10-01",
+      "type": "Microsoft.DataFactory/datafactories",
+      "location": "[parameters('dataFactoryLocation')]",
+      "resources": [
+        {
+          "type": "linkedservices",
+          "name": "[variables('sqlDatabaseLinkedService')]",
+          "apiVersion": "2015-10-01",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]"
+          ],
+          "properties": {
+            "type": "AzureSqlDatabase",
+            "description": "Azure SQL linked service",
+            "typeProperties": {
+              "connectionString": "[parameters('sqlConnectionString')]"
+            }
+          }
+        },
+        {
+          "type": "linkedservices",
+          "name": "[variables('dataLakeLinkedService')]",
+          "apiVersion": "2015-10-01",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]"
+          ],
+          "properties": {
+            "type": "AzureDataLakeStore",
+            "description": "Azure Data Lake linked service",
+            "typeProperties": {
+              "dataLakeStoreUri": "[parameters('adlURI')]",
+              "tenant": "[parameters('tenantId')]",
+              "servicePrincipalId": "[parameters('servicePrincipalId')]",
+              "servicePrincipalKey": "[parameters('servicePrincipalKey')]"
+            }
+          }
+        },
+        {
+          "type": "linkedservices",
+          "name": "[variables('azureSearchLinkedService')]",
+          "apiVersion": "2015-10-01",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]"
+          ],
+          "properties": {
+            "type": "AzureSearch",
+            "description": "Azure Search linked service",
+            "typeProperties": {
+              "url": "[parameters('azureSearchUrl')]",
+              "key": "[parameters('azureSearchKey')]"
+            }
+          }
+        },
+        {
+          "type": "linkedservices",
+          "name": "[variables('documentDbLinkedService')]",
+          "apiVersion": "2015-10-01",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]"
+          ],
+          "properties": {
+            "type": "DocumentDb",
+            "description": "DocumentDb linked service",
+            "typeProperties": {
+              "connectionString": "[parameters('documentDbConnectionString')]"
+            }
+          }
+        },
+        {
+          "name": "SqlCopyPipeline",
+          "type": "dataPipelines",
+          "apiVersion": "2015-10-01",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]",
+            "[variables('sqlDatabaseLinkedService')]",
+            "[variables('dataLakeLinkedService')]"
+          ],
+          "properties": {
+            "pipelineMode": "OneTime",
+            "isPaused": false,
+            "start": "2017-10-03T00:00:00Z",
+            "end": "2017-10-03T00:00:00Z",
+            "activities": [
+              {
+                "name": "SqlToLakeCopy",
+                "type": "Copy",
+                "typeProperties": {
+                  "source": {
+                    "type": "SqlSource",
+                    "sqlReaderQuery": "[concat('SELECT * FROM ', parameters('sqlTableName'))]"
+                  },
+                  "sink": {
+                    "type": "AzureDataLakeStoreSink"
+                  }
+                },
+                "inputs": [
+                  {
+                    "name": "[variables('sqlDataSet')]"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "[variables('sqlInDataLakeDataSet')]"
+                  }
+                ],
+                "Policy": {
+                  "concurrency": 1,
+                  "executionPriorityOrder": "NewestFirst",
+                  "retry": 3,
+                  "timeout": "01:00:00"
+                }
+              },
+              {
+                "name": "SqlLakeToSearchCopy",
+                "type": "Copy",
+                "typeProperties": {
+                  "executionLocation": "[parameters('dataFactoryLocation')]",
+                  "source": {
+                    "type": "AzureDataLakeStoreSource"
+                  },
+                  "sink": {
+                    "type": "AzureSearchIndexSink"
+                  }
+                },
+                "inputs": [
+                  {
+                    "name": "[variables('sqlInDataLakeDataSet')]"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "[variables('searchDataSetSql')]"
+                  }
+                ],
+                "Policy": {
+                  "concurrency": 1,
+                  "executionPriorityOrder": "NewestFirst",
+                  "retry": 3,
+                  "timeout": "01:00:00"
+                }
+              }
+            ],
+            "datasets": [
+              {
+                "name": "[variables('sqlDataSet')]",
+                "properties": {
+                  "type": "AzureSqlTable",
+                  "linkedServiceName": "[variables('sqlDatabaseLinkedService')]",
+                  "typeProperties": {
+                    "tableName": "[parameters('sqlTableName')]"
+                  },
+                  "availability": {
+                    "frequency": "Day",
+                    "interval": 1
+                  },
+                  "external": true
+                }
+              },
+              {
+                "name": "[variables('sqlInDataLakeDataSet')]",
+                "properties": {
+                  "type": "AzureDataLakeStore",
+                  "linkedServiceName": "[variables('dataLakeLinkedService')]",
+                  "typeProperties": {
+                    "folderPath": "./",
+                    "fileName": "[parameters('sqlFileName')]",
+                    "format": {
+                      "type": "TextFormat",
+                      "columnDelimiter": ",",
+                      "quoteChar": "\"",
+                      "firstRowAsHeader": true
+                    }
+                  },
+                  "availability": {
+                    "frequency": "Day",
+                    "interval": 1
+                  }
+                }
+              },
+              {
+                "name": "[variables('searchDataSetSql')]",
+                "properties": {
+                  "type": "AzureSearchIndex",
+                  "linkedServiceName": "[variables('azureSearchLinkedService')]",
+                  "typeProperties": {
+                    "indexName": "[parameters('azureSearchIndexName')]"
+                  },
+                  "availability": {
+                    "frequency": "Day",
+                    "interval": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "DocumentDbCopyPipeline",
+          "type": "dataPipelines",
+          "apiVersion": "2015-10-01",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]",
+            "[variables('documentDbLinkedService')]",
+            "[variables('dataLakeLinkedService')]"
+          ],
+          "properties": {
+            "start": "2017-10-19T15:41:08.79Z",
+            "end": "2017-10-19T15:41:08.79Z",
+            "isPaused": false,
+            "pipelineMode": "OneTime",
+            "expirationTime": "3.00:00:00",
+            "activities": [
+              {
+                "name": "DocumentDbToLakeCopy",
+                "type": "Copy",
+                "typeProperties": {
+                  "source": {
+                    "type": "DocumentDbCollectionSource",
+                    "query": "[concat('SELECT ' ,parameters('documentDbCollectionName'), '.Id, ', parameters('documentDbCollectionName'), '.Name.FirstName, ' ,parameters('documentDbCollectionName'),'.Name.LastName, ', parameters('documentDbCollectionName'),'.Email, ', parameters('documentDbCollectionName'),'.Gender, ', parameters('documentDbCollectionName'),'.Location.City, ', parameters('documentDbCollectionName'),'.Location.Country, ', parameters('documentDbCollectionName'),'.Location.StreetAddress, ', parameters('documentDbCollectionName'),'.CompanyName, ', parameters('documentDbCollectionName'),'.JobTitle, ', parameters('documentDbCollectionName'),'.PhoneNumber FROM ' , parameters('documentDbCollectionName'))]",
+                    "nestingSeparator": "."
+                  },
+                  "sink": {
+                    "type": "AzureDataLakeStoreSink"
+                  }
+                },
+                "inputs": [
+                  {
+                    "name": "[variables('documentDbDataSet')]"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "[variables('documentDbInDataLakeDataSet')]"
+                  }
+                ],
+                "policy": {
+                  "timeout": "1.00:00:00",
+                  "concurrency": 1,
+                  "executionPriorityOrder": "NewestFirst",
+                  "style": "StartOfInterval",
+                  "retry": 3
+                }               
+              },
+              {
+                "name": "DocumentDbLakeToSearchCopy",
+                "type": "Copy",
+                "typeProperties": {
+                  "executionLocation": "[parameters('dataFactoryLocation')]",
+                  "source": {
+                    "type": "AzureDataLakeStoreSource"
+                  },
+                  "sink": {
+                    "type": "AzureSearchIndexSink"
+                  }
+                },
+                "inputs": [
+                  {
+                    "name": "[variables('documentDbInDataLakeDataSet')]"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "name": "[variables('searchDataSetDocumentDb')]"
+                  }
+                ],
+                "Policy": {
+                  "concurrency": 1,
+                  "executionPriorityOrder": "NewestFirst",
+                  "retry": 3,
+                  "timeout": "01:00:00"
+                }
+              }
+            ],
+            "datasets": [
+              {
+                "name": "[variables('documentDbDataSet')]",
+                "properties": {
+                  "structure": [
+                    {
+                      "name": "Id",
+                      "type": "String"
+                    },
+                    {
+                      "name": "FirstName",
+                      "type": "String"
+                    },
+                    {
+                      "name": "LastName",
+                      "type": "String"
+                    },
+                    {
+                      "name": "Email",
+                      "type": "String"
+                    },
+                    {
+                      "name": "Gender",
+                      "type": "String"
+                    },
+                    {
+                      "name": "City",
+                      "type": "String"
+                    },
+                    {
+                      "name": "Country",
+                      "type": "String"
+                    },
+                    {
+                      "name": "StreetAddress",
+                      "type": "String"
+                    },
+                    {
+                      "name": "CompanyName",
+                      "type": "String"
+                    },
+                    {
+                      "name": "JobTitle",
+                      "type": "String"
+                    },
+                    {
+                      "name": "PhoneNumber",
+                      "type": "String"
+                    }
+                  ],
+                  "published": false,
+                  "type": "DocumentDbCollection",
+                  "linkedServiceName": "[variables('documentDbLinkedService')]",
+                  "typeProperties": {
+                    "collectionName": "people"
+                  },
+                  "availability": {
+                    "frequency": "Day",
+                    "interval": 1
+                  },
+                  "external": true,
+                  "policy": {}
+                }
+              },
+              {
+                "name": "[variables('documentDbInDataLakeDataSet')]",
+                "properties": {
+                  "type": "AzureDataLakeStore",
+                  "linkedServiceName": "[variables('dataLakeLinkedService')]",
+                  "typeProperties": {
+                    "folderPath": "./",
+                    "fileName": "[parameters('documentDbFileName')]",
+                    "format": {
+                      "type": "JsonFormat"
+                    }
+                  },
+                  "availability": {
+                    "frequency": "Day",
+                    "interval": 1
+                  }
+                }
+              },
+              {
+                "name": "[variables('searchDataSetDocumentDb')]",
+                "properties": {
+                  "type": "AzureSearchIndex",
+                  "linkedServiceName": "[variables('azureSearchLinkedService')]",
+                  "typeProperties": {
+                    "indexName": "[parameters('azureSearchIndexName')]"
+                  },
+                  "availability": {
+                    "frequency": "Day",
+                    "interval": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+
+  }
+}

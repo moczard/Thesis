@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "azureSearchName": {
+      "value": "search"
+    },
+    "azureSearchIndexName": {
+      "value": "people"
+    },
+    "sqlUserName": {
+      "value": "..."
+    },
+    "sqlServerPassword": {
+      "value": "..."
+    },
+    "sqlServerName": {
+      "value": "..."
+    },
+    "sqlFileName": {
+      "value": "initialData.csv"
+    },
+    "dataFactoryName": {
+      "value": "factory"
+    },
+    "dataLakeStoreName": {
+      "value": "datalake"
+    },
+    "dataLakeUpdateFilesPath": {
+      "value": "/Updates/Updates.json"
+    },
+    "dataLakeMergeFilesPath": {
+      "value": "/Merges/Merges.json"
+    },
+    "dataLakeLogFilesPath": {
+      "value": "/Logs/AuditLog.json"
+    },
+    "dataLakeAnalyticsName": {
+      "value": "adla"
+    },
+    "documentDbName": {
+      "value": "documentdb"
+    },
+    "documentDbFileName": {
+      "value": "initialData.json"
+    },
+    "functionAppName": {
+      "value": "functionapp"
+    },
+    "serviceBusName": {
+      "value": "servicebus"
+    },
+    "webAppName": {
+      "value": "webapp"
+    }
+  }
+}

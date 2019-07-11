@@ -1,0 +1,55 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {  
+    "documentDbName": {
+      "type": "string"
+    },
+    "documentDbDatabase": {
+      "type": "string"
+    }
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "kind": "GlobalDocumentDB",
+      "name": "[parameters('documentDbName')]",
+      "apiVersion": "2015-04-08",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "defaultExperience": "DocumentDB"
+      },
+      "scale": null,
+      "properties": {
+        "name": "[parameters('documentDbName')]",
+        "databaseAccountOfferType": "Standard",
+        "locations": [
+          {
+            "locationName": "[resourceGroup().location]",
+            "failoverPriority": 0
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "connectionString": {
+      "value": "[concat('mongodb://', parameters('documentDbName'), ':', listKeys(resourceId('Microsoft.DocumentDb/databaseAccounts', parameters('documentDbName')), '2015-04-08').primaryMasterKey, '@', parameters('documentDbName'), '.documents.azure.com:10250/?ssl=true')]",
+      "type": "string"
+    },
+    "documentDbUri": {
+      "value": "[concat('https://', parameters('documentDbName'), '.documents.azure.com:443/')]",
+      "type": "string"
+    },
+    "primaryKey": {
+      "value": "[listKeys(resourceId('Microsoft.DocumentDb/databaseAccounts', parameters('documentDbName')), '2015-04-08').primaryMasterKey]",
+      "type": "string"
+    },
+    "dbConnectionString": {
+      "value": "[concat('accountendpoint=', 'https://', parameters('documentDbName'), '.documents.azure.com:443;', 'accountkey=',listKeys(resourceId('Microsoft.DocumentDb/databaseAccounts', parameters('documentDbName')), '2015-04-08').primaryMasterKey, ';database=', parameters('documentDbDatabase'))]",
+      "type": "string"
+    }
+  }
+}

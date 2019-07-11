@@ -1,0 +1,194 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "serviceBusName": {
+      "type": "string"
+    },
+    "serviceBusSku": {
+      "type": "string"
+    },
+    "serviceBusEventsTopicName": {
+      "type": "string"
+    },
+    "serviceBusLogsTopicName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "serviceBusSubscriptionToDataLake": "data-lake",
+    "serviceBusSubscriptionToAzureSearch": "azure-search",
+    "serviceBusSubscriptionLogging": "audit-log",
+    "serviceBusSubscriptionBackup": "backup",
+    "defaultSASKeyName": "RootManageSharedAccessKey",
+    "authRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('serviceBusName'), variables('defaultSASKeyName'))]",
+    "sbVersion": "2015-08-01"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "sku": {
+        "name": "[parameters('serviceBusSku')]",
+        "tier": "[parameters('serviceBusSku')]",
+        "capacity": 1
+      },
+      "kind": "Messaging",
+      "name": "[parameters('serviceBusName')]",
+      "apiVersion": "2015-08-01",
+      "location": "[resourceGroup().location]",
+      "scale": null,
+      "resources": [
+        {
+          "type": "topics",
+          "name": "[parameters('serviceBusEventsTopicName')]",
+          "apiVersion": "2015-08-01",
+          "location": "[resourceGroup().location]",
+          "properties": {
+            "defaultMessageTimeToLive": "14.00:00:00",
+            "maxSizeInMegabytes": 1024,
+            "requiresDuplicateDetection": false,
+            "enableBatchedOperations": false,
+            "supportOrdering": false,
+            "enablePartitioning": true,
+            "enableExpress": false
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusName'))]"
+          ],
+          "resources": [
+            {
+              "type": "subscriptions",
+              "name": "[variables('serviceBusSubscriptionToDataLake')]",
+              "apiVersion": "2015-08-01",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "lockDuration": "00:01:00",
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "10675199.02:48:05.4775807",
+                "deadLetteringOnMessageExpiration": false,
+                "deadLetteringOnFilterEvaluationExceptions": false,
+                "maxDeliveryCount": 5,
+                "enableBatchedOperations": false,
+                "autoDeleteOnIdle": "10675199.02:48:05.4775807"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusName'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('serviceBusName'), parameters('serviceBusEventsTopicName'))]"
+              ]
+            },
+            {
+              "type": "subscriptions",
+              "name": "[variables('serviceBusSubscriptionToAzureSearch')]",
+              "apiVersion": "2015-08-01",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "lockDuration": "00:01:00",
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "10675199.02:48:05.4775807",
+                "deadLetteringOnMessageExpiration": false,
+                "deadLetteringOnFilterEvaluationExceptions": false,
+                "maxDeliveryCount": 5,
+                "enableBatchedOperations": false,
+                "autoDeleteOnIdle": "10675199.02:48:05.4775807"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusName'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('serviceBusName'), parameters('serviceBusEventsTopicName'))]"
+              ]
+            },
+            {
+              "type": "subscriptions",
+              "name": "[variables('serviceBusSubscriptionBackup')]",
+              "apiVersion": "2015-08-01",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "lockDuration": "00:01:00",
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "10675199.02:48:05.4775807",
+                "deadLetteringOnMessageExpiration": false,
+                "deadLetteringOnFilterEvaluationExceptions": false,
+                "maxDeliveryCount": 5,
+                "enableBatchedOperations": false,
+                "autoDeleteOnIdle": "10675199.02:48:05.4775807"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusName'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('serviceBusName'), parameters('serviceBusEventsTopicName'))]"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "topics",
+          "name": "[parameters('serviceBusLogsTopicName')]",
+          "apiVersion": "2015-08-01",
+          "location": "[resourceGroup().location]",
+          "properties": {
+            "defaultMessageTimeToLive": "14.00:00:00",
+            "maxSizeInMegabytes": 1024,
+            "requiresDuplicateDetection": false,
+            "enableBatchedOperations": false,
+            "supportOrdering": false,
+            "enablePartitioning": true,
+            "enableExpress": false
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusName'))]"
+          ],
+          "resources": [
+            {
+              "type": "subscriptions",
+              "name": "[variables('serviceBusSubscriptionLogging')]",
+              "apiVersion": "2015-08-01",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "lockDuration": "00:01:00",
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "10675199.02:48:05.4775807",
+                "deadLetteringOnMessageExpiration": false,
+                "deadLetteringOnFilterEvaluationExceptions": false,
+                "maxDeliveryCount": 5,
+                "enableBatchedOperations": false,
+                "autoDeleteOnIdle": "10675199.02:48:05.4775807"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusName'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('serviceBusName'), parameters('serviceBusLogsTopicName'))]"
+              ]
+            },
+            {
+              "type": "subscriptions",
+              "name": "[variables('serviceBusSubscriptionBackup')]",
+              "apiVersion": "2015-08-01",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "lockDuration": "00:01:00",
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "10675199.02:48:05.4775807",
+                "deadLetteringOnMessageExpiration": false,
+                "deadLetteringOnFilterEvaluationExceptions": false,
+                "maxDeliveryCount": 5,
+                "enableBatchedOperations": false,
+                "autoDeleteOnIdle": "10675199.02:48:05.4775807"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', parameters('serviceBusName'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces/topics', parameters('serviceBusName'), parameters('serviceBusLogsTopicName'))]"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "namespaceConnectionString": {
+      "value": "[listkeys(variables('authRuleResourceId'), variables('sbVersion')).primaryConnectionString]",
+      "type": "string"
+    },
+    "sharedAccessPolicyPrimaryKey": {
+      "value": "[listkeys(variables('authRuleResourceId'), variables('sbVersion')).primaryKey]",
+      "type": "string"
+    }
+  }
+}

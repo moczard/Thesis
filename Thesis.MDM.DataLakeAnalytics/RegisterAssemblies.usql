@@ -1,0 +1,10 @@
+﻿DROP ASSEMBLY IF EXISTS [DataLakeAnalytics.ClassLibrary];
+DROP ASSEMBLY IF EXISTS [Newtonsoft.Json];
+
+CREATE ASSEMBLY [DataLakeAnalytics.ClassLibrary]
+FROM @"/Assemblies/DataLakeAnalytics.ClassLibrary.dll";
+//FROM @"C:\Users\David\Desktop\Szakdoga\Thesis.MDM\DataLakeAnalytics.ClassLibrary\bin\Debug\DataLakeAnalytics.ClassLibrary.dll";
+
+CREATE ASSEMBLY [Newtonsoft.Json]
+FROM @"/Assemblies/Newtonsoft.Json.dll";
+//FROM @"C:\Users\David\Desktop\Szakdoga\Thesis.MDM\DataLakeAnalytics.ClassLibrary\bin\Debug\Newtonsoft.Json.dll";

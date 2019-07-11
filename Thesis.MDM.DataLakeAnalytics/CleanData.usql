@@ -1,0 +1,121 @@
+﻿REFERENCE ASSEMBLY [DataLakeAnalytics.ClassLibrary];
+REFERENCE ASSEMBLY [Newtonsoft.Json];
+
+@jsonInitialData =
+    EXTRACT Id string,
+            FirstName string,
+            LastName string,
+            Email string,
+            Gender string,
+            City string,
+            Country string,
+            StreetAddress string,
+            CompanyName string,
+            JobTitle string,
+            PhoneNumber string
+    FROM "initialData.json"
+    USING new DataLakeAnalytics.ClassLibrary.Extractors.JsonExtractor();
+
+@csvInitialData =
+    EXTRACT Id string,
+            FirstName string,
+            LastName string,
+            Email string,
+            Gender string,
+            City string,
+            Country string,
+            StreetAddress string,
+            CompanyName string,
+            JobTitle string,
+            PhoneNumber string
+    FROM "initialData.csv"
+    USING Extractors.Csv(quoting : true, encoding : Encoding.UTF8, skipFirstNRows : 1);
+
+@updates =
+    EXTRACT Id string,
+            FirstName string,
+            LastName string,
+            Email string,
+            Gender string,
+            City string,
+            Country string,
+            StreetAddress string,
+            CompanyName string,
+            JobTitle string,
+            PhoneNumber string,
+            Timestamp DateTime
+    FROM "Updates/Updates.json"
+    USING new DataLakeAnalytics.ClassLibrary.Extractors.JsonExtractor();
+
+@merges =
+    EXTRACT Id string,
+            FirstName string,
+            LastName string,
+            Email string,
+            Gender string,
+            City string,
+            Country string,
+            StreetAddress string,
+            CompanyName string,
+            JobTitle string,
+            PhoneNumber string,
+            Timestamp DateTime
+    FROM "Merges/Merges.json"
+    USING new DataLakeAnalytics.ClassLibrary.Extractors.MergeExtractor();
+
+
+@union =
+    SELECT Id,
+           FirstName,
+           LastName,
+           Email,
+           Gender,
+           City,
+           Country,
+           StreetAddress,
+           CompanyName,
+           JobTitle,
+           PhoneNumber,
+           new DateTime(1900, 1, 1) AS Timestamp
+    FROM @jsonInitialData
+UNION ALL
+    SELECT Id,
+           FirstName,
+           LastName,
+           Email,
+           Gender,
+           City,
+           Country,
+           StreetAddress,
+           CompanyName,
+           JobTitle,
+           PhoneNumber,
+           new DateTime(1900, 1, 1) AS Timestamp
+    FROM @csvInitialData
+UNION ALL
+    SELECT * FROM @updates
+ UNION ALL
+    SELECT * FROM @merges;
+
+@cleandata =
+    REDUCE @union
+    PRESORT Timestamp
+    ON Id
+    PRODUCE Id,
+            FirstName,
+            LastName,
+            Email,
+            Gender,
+            City,
+            Country,
+            StreetAddress,
+            CompanyName,
+            JobTitle,
+            PhoneNumber
+    READONLY Id
+    USING new DataLakeAnalytics.ClassLibrary.Reducers.EventReducer();
+            
+
+OUTPUT @cleandata
+TO "cleanData.csv"
+USING Outputters.Csv(encoding : Encoding.UTF8, quoting : true, outputHeader : true);
